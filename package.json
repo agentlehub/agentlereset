@@ -1,0 +1,34 @@
+{
+  "name": "agentlereset",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare": "husky",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix .",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "typecheck": "tsc --noEmit",
+    "lint:staged": "lint-staged --concurrent false"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "husky": "9.1.7",
+    "lint-staged": "17.6.0",
+    "oxfmt": "0.75.0",
+    "oxlint": "1.90.0",
+    "oxlint-tsgolint": "7.0.2005",
+    "typescript": "7.0.2"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}": [
+      "oxlint --fix",
+      "oxfmt --write"
+    ],
+    "*.{json,jsonc,md,mdx,yaml,yml,toml,html,css,scss}": "oxfmt --write --no-error-on-unmatched-pattern"
+  },
+  "engines": {
+    "node": ">=24.19.0"
+  }
+}
