@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: approved
 ---
 
 # Brainstorming: agentlereset
@@ -12,10 +12,10 @@ requested banked resets without the desktop assistant tool's local 10% gate.
 The user wants plugin enable/disable to be the availability control, with no
 custom permissions system, CLI, native UI patches or threshold settings.
 
-This is an architecture proposal only. The project directory and this document
-exist; reset-tool implementation, plugin installation and live redemption have not been
-authorized by the architecture request. Development tooling was authorized later. No real reset
-may be used during design or automated testing.
+The architecture decisions are approved; reset-tool implementation has not started.
+Development tooling and publication of the repository were authorized separately.
+Plugin installation and live redemption are not authorized. No real reset may be
+used during design or automated testing.
 
 ## Current decisions
 
@@ -25,6 +25,9 @@ may be used during design or automated testing.
 - Use a maintained MCP library rather than writing MCP protocol handling. See Q1.
 - Use the official local Codex CLI's `app-server` mode and its signed-in account,
   over private stdio. No desktop shared-socket backend. See Q2.
+- Require a caller-supplied idempotency UUID and reuse it for uncertain outcomes;
+  no automatic retries or local request journal. See Q3.
+- Reject overlapping calls as busy within each server process. See Q4.
 - Keep the existing reset PR and installed desktop app untouched.
 
 ## Q&A
@@ -81,11 +84,45 @@ without adding an authentication implementation or a second transport.
 - Local official Codex CLI app-server over stdio: approved.
 - Desktop-owned shared socket: not selected for v1.
 
+### Q3: Should the caller supply the reset request identity?
+
+**Recommended**
+
+Require `reset_usage({ idempotencyKey })`, with a UUID reused for the same logical
+request after an uncertain response. No automatic retries or local storage.
+
+**Resolved**
+
+The user answered "1. agreed" to this recommendation.
+
+**Rationale**
+
+Preserves request identity across explicit retries without a local journal.
+The caller must retain the UUID and the same account context. A zero-argument
+tool would require a different recovery design to avoid duplicate spending.
+
+### Q4: Should overlapping reset calls be rejected or queued?
+
+**Recommended**
+
+Reject an overlapping call as busy rather than queuing another reset.
+
+**Resolved**
+
+The user answered "2. agreed" to this recommendation.
+
+**Rationale**
+
+Avoids delaying a second redemption until after the circumstances of the request
+have changed. This is a per-process guard, not a machine-wide lock.
+
 ## Tooling setup discussion
 
 The user requested local Git initialization and Oxlint/Oxfmt setup, with the
 configuration agreed before applying it. The local repository is initialized on
-`main`, with no remote. The user approved tooling configuration and requested lint-staged integration.
+`main`. The user approved tooling configuration and requested lint-staged integration.
+They subsequently authorized adding `git@github.com:agentlehub/agentlereset.git`
+as the remote and pushing the repository.
 This does not authorize implementing the reset tool.
 
 Approved tooling configuration:
@@ -143,17 +180,17 @@ committing the local project setup, including this proposal.
 
 ### Implementation readiness
 
-The backend and tooling are approved. The architecture as a whole is still a
-proposal, with two consequential behavior choices awaiting agreement:
+The backend, tooling, and the two remaining consequential behavior choices are
+approved. No open operator architecture decisions remain:
 
-1. Tool input and retry contract: recommend the proposed required
+1. Tool input and retry contract: require the approved
    `idempotencyKey` UUID, supplied by the caller and reused for the same logical
    request after an uncertain response. No automatic retries or local request
    journal. This relies on the caller preserving the key and the same account
    context; it does not guarantee deduplication across account changes.
    A zero-argument tool would require a different recovery design to avoid
    generating a fresh request identity after an ambiguous outcome.
-2. Concurrent calls: recommend rejecting an overlapping call as busy instead of
+2. Concurrent calls: reject an overlapping call as busy instead of
    queueing it. Queueing a second redemption can spend another credit later,
    after the situation that prompted the request has changed. The busy guard is
    per server process, not a machine-wide lock.
@@ -165,7 +202,7 @@ backends. These are technical acceptance checks, not permission to use a real
 reset or install into the live app. For initial local development, build the
 bundle before installing the plugin; public distribution remains out of scope.
 
-## Proposed architecture
+## Approved architecture
 
 ```text
 Codex chat
@@ -187,7 +224,7 @@ Codex client. No general-purpose JSON-RPC framework is proposed.
 
 ### One tool
 
-Proposed contract: `reset_usage({ idempotencyKey: string })`.
+Approved contract: `reset_usage({ idempotencyKey: string })`.
 
 - Use a fresh UUID for each explicitly requested logical reset, and reuse it if
   the same request needs reconciliation after an uncertain response.
@@ -202,7 +239,7 @@ Proposed contract: `reset_usage({ idempotencyKey: string })`.
   redemption. Caller-supplied stable keys avoid a new persistence subsystem.
 - After a confirmed success, read fresh usage for reporting. If this read fails,
   preserve the successful redemption result and report the refresh failure.
-- Serialize/reject overlapping calls within one server process. Check cancellation
+- Reject overlapping calls as busy within one server process. Check cancellation
   before dispatch, use bounded timeouts, and clean up the child process. Neither
   cancellation nor plugin disablement can undo a request already sent.
 - MCP metadata must identify the operation as mutating, not read-only. Existing
@@ -263,7 +300,8 @@ custom CLI commands, skills, scheduler, plugin hooks, HTTP listener or database.
 Use the current root `plugin.json` and `mcp.json` formats. The stdio launcher is
 `node ${PLUGIN_ROOT}/dist/server.mjs`, with plugin-root cwd. Marketplace discovery
 is packaging metadata, not a second running component. No public-directory
-submission or publication is included in this proposal.
+submission or packaged release is included. Source repository publication was
+authorized separately.
 
 ## Permission and disablement boundary
 
@@ -298,8 +336,8 @@ socket fallback or automatic matching to a remote task host.
 
 ## Prerequisites and acceptance considerations
 
-The authority/transport is approved. The remaining architecture details are still
-proposals. For the local stdio package, require Node, a compatible
+The authority/transport and tool behavior are approved. For the local stdio
+package, require Node, a compatible
 stock Codex executable and an existing ChatGPT login; agentlereset has no login UI.
 
 Initial acceptance should use a fake app-server and the MCP SDK's in-memory/test
