@@ -1,0 +1,11 @@
+{
+  "name": "agentlereset-local",
+  "plugins": [
+    {
+      "name": "agentlereset",
+      "source": { "source": "local", "path": "./" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}

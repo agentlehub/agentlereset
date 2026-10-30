@@ -10,10 +10,19 @@
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "typecheck": "tsc --noEmit",
-    "lint:staged": "lint-staged --concurrent false"
+    "lint:staged": "lint-staged --concurrent false",
+    "build": "esbuild src/server.ts --bundle --platform=node --target=node24 --format=esm --outfile=dist/server.mjs",
+    "test": "node --test test/reset.test.ts",
+    "test:bundle": "npm run build && node --test test/bundle.test.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.4.0",
+    "zod": "4.6.7"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "2.4.0",
     "@types/node": "24.19.2",
+    "esbuild": "0.28.2",
     "husky": "9.1.7",
     "lint-staged": "17.6.0",
     "oxfmt": "0.75.0",

@@ -5,7 +5,9 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true
   },
   "include": ["**/*.ts", "**/*.mts", "**/*.cts"],
   "exclude": ["node_modules", "dist", "coverage"]
